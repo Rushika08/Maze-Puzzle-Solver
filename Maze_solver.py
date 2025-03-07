@@ -591,6 +591,7 @@ else:
                 st.error(str(e))
                 st.stop()
         else:
+            st.warning("Please add a maze to solve!")
             st.stop()
 
 # Display original maze
