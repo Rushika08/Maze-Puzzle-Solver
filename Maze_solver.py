@@ -542,7 +542,7 @@ def visualize_maze(maze, path=None, visited=None, pheromones=None):
 
 
 # Streamlit UI
-st.title("Custom Maze Solver")
+st.title("Maze Solver")
 
 # Maze generation/upload
 st.sidebar.header("Maze Configuration")
