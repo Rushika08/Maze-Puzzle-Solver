@@ -129,23 +129,30 @@ def image_to_maze(image_path):
     return binary_maze, start_point, end_point
 
 # custom maze
+import streamlit as st
+import numpy as np
+
 def custom_maze_editor():
     st.sidebar.header("Custom Maze Editor")
     
-    # Initialize session state
+    # Initialize session state for maze, dimensions, and drawing mode
     if 'custom_maze' not in st.session_state:
         st.session_state.custom_maze = None
         st.session_state.start_point = None
         st.session_state.end_point = None
         st.session_state.drawing_mode = 'wall'
+        st.session_state.rows = 5  # Default row count
+        st.session_state.cols = 5  # Default column count
+
+    # Maze dimensions input
+    cols_in = st.sidebar.number_input("Columns", 3, 10, st.session_state.cols)
+    rows_in = st.sidebar.number_input("Rows", 3, 10, st.session_state.rows)
     
-    # Maze dimensions
-    cols = st.sidebar.number_input("Columns", 5, 25, 10)
-    rows = st.sidebar.number_input("Rows", 5, 25, 10)
-    
-    # Initialize empty maze
+    # Update maze size only when "Create New Maze" button is pressed
     if st.sidebar.button("Create New Maze"):
-        st.session_state.custom_maze = np.zeros((rows, cols), dtype=int)
+        st.session_state.rows = rows_in
+        st.session_state.cols = cols_in
+        st.session_state.custom_maze = np.zeros((st.session_state.rows, st.session_state.cols), dtype=int)
         st.session_state.start_point = None
         st.session_state.end_point = None
     
@@ -159,19 +166,18 @@ def custom_maze_editor():
         
         # Grid display
         st.header("Draw Your Maze")
-        col1, col2 = st.columns([10, 2])
+        col1 = st.columns([1])  # Only 1 column to fill entire width
         
-        with col1:
+        with col1[0]:
             # Create grid using columns
-            grid = st.columns(cols)
-            button_size = 10
-            for i in range(rows):
-                for j in range(cols):
+            grid = st.columns(st.session_state.cols)
+            for i in range(st.session_state.rows):
+                for j in range(st.session_state.cols):
                     with grid[j]:
                         cell_key = f"cell_{i}_{j}"
                         cell_value = st.session_state.custom_maze[i, j]
                         
-                        # Determine button color
+                        # Determine button color based on the cell's value
                         if (i, j) == st.session_state.start_point:
                             btn_color = 'green'
                         elif (i, j) == st.session_state.end_point:
@@ -179,100 +185,45 @@ def custom_maze_editor():
                         else:
                             btn_color = 'white' if cell_value == 0 else 'black'
                         
-                        # Create button with dynamic color
+                        # Create button with dynamic color representation
+                        btn_label = " "
+                        if btn_color == 'green':
+                            btn_label = "🟢"  # Green for Start
+                        elif btn_color == 'red':
+                            btn_label = "🔴"  # Red for End
+                        elif btn_color == 'black':
+                            btn_label = "🟥"  # Wall representation
+                        
+                        # Create the button and handle click
                         if st.button(
-                            " ", 
+                            btn_label, 
                             key=cell_key,
                             on_click=handle_cell_click,
                             args=(i, j),
-                            type='primary' if btn_color != 'white' else 'secondary',
                             help=f"Cell ({i}, {j})"
                         ):
                             pass
-                        
-                        # Apply custom CSS for coloring
-                        st.markdown(f"""
-                            <style>
-                                div[data-testid="column"]:nth-child({j+1}) > div[data-testid="stVerticalBlock"] > div[data-testid="stHorizontalBlock"] > div[data-testid="column"] > div > div > button {{
-                                    width: {button_size}px !important;
-                                    height: {button_size}px !important;
-                                    min-width: {button_size}px !important;
-                                    min-height: {button_size}px !important;
-                                    border: 0px solid gray !important;
-                                    color: {'white' if btn_color == 'black' else 'black'} !important;
-                                    padding: 0 !important; /* Remove padding for tight fit */
-                                    border-radius: 0 !important; /* Optional: Square corners */
-                                }}
-                            </style>
-                        """, unsafe_allow_html=True)
 
-            
+            # Reset the maze button
             if st.button("Reset Maze"):
-                st.session_state.custom_maze = np.zeros((rows, cols), dtype=int)
+                st.session_state.custom_maze = np.zeros((st.session_state.rows, st.session_state.cols), dtype=int)
                 st.session_state.start_point = None
                 st.session_state.end_point = None
-                st.experimental_rerun()
-        
+
         return st.session_state.custom_maze, st.session_state.start_point, st.session_state.end_point
     return None, None, None
 
-def handle_cell_click(i, j):
-    maze = st.session_state.custom_maze
-    mode = st.session_state.drawing_mode
-    
-    if mode == 'wall':
-        maze[i, j] = 1
-    elif mode == 'erase':
-        maze[i, j] = 0
-    elif mode == 'start':
-        st.session_state.start_point = (i, j)
-    elif mode == 'end':
-        st.session_state.end_point = (i, j)
-    
-    st.session_state.custom_maze = maze
-
-# Message handler
-def handle_messages():
-    if 'messages' in st.session_state:
-        for msg in st.session_state.messages:
-            if msg['type'] == 'MAZE_EDIT':
-                data = msg['data']
-                i, j = data['row'], data['col']
-                
-                if data['tool'] == 'Wall':
-                    st.session_state.maze[i, j] = 1
-                elif data['tool'] == 'Eraser':
-                    st.session_state.maze[i, j] = 0
-                elif data['tool'] == 'Start':
-                    st.session_state.start = (i, j)
-                elif data['tool'] == 'End':
-                    st.session_state.end = (i, j)
-        
-        del st.session_state.messages
-
-
-# Add this to handle JavaScript communication
-def handle_js_message():
-    if 'messages' in st.session_state:
-        for message in st.session_state.messages:
-            if message['type'] == 'CELL_CLICK':
-                st.session_state.click_data = message['data']
-        del st.session_state.messages
 
 def handle_cell_click(i, j):
-    maze = st.session_state.custom_maze
-    mode = st.session_state.drawing_mode
-    
-    if mode == 'wall':
-        maze[i, j] = 1
-    elif mode == 'erase':
-        maze[i, j] = 0
-    elif mode == 'start':
-        st.session_state.start_point = (i, j)
-    elif mode == 'end':
-        st.session_state.end_point = (i, j)
-    
-    st.session_state.custom_maze = maze
+    """Handle cell click event to modify the maze."""
+    if st.session_state.drawing_mode == 'wall':
+        st.session_state.custom_maze[i, j] = 1  # Set the cell as a wall
+    elif st.session_state.drawing_mode == 'erase':
+        st.session_state.custom_maze[i, j] = 0  # Erase the wall
+    elif st.session_state.drawing_mode == 'start':
+        st.session_state.start_point = (i, j)  # Set start point
+    elif st.session_state.drawing_mode == 'end':
+        st.session_state.end_point = (i, j)  # Set end point
 
 def handle_grid_messages():
     if 'messages' in st.session_state:
@@ -625,7 +576,11 @@ if option == "Create Custom Maze":
             if np.any((maze != 0) & (maze != 1)):
                 st.error("Invalid maze values detected! Only 0s and 1s allowed.")
             else:
-                fig = visualize_maze(maze)
+                fig, ax = plt.subplots(figsize=(10, 5))  # Create the figure and axes explicitly
+                ax.imshow(maze, cmap='binary', vmin=0, vmax=1)  # Visualize the maze
+                # Optionally, you can add additional visualizations or styling to the axes if needed
+                ax.axis('off')  # Hide the axis
+                # Now pass the figure to st.pyplot() to avoid the warning
                 st.pyplot(fig)
                 
                 if st.sidebar.button("Validate Custom Maze"):
@@ -660,14 +615,11 @@ else:
 # Display original maze
 if option != "Create Custom Maze":
     st.header("Original Maze")
-    
     # Explicitly create the figure using plt.subplots
     fig, ax = plt.subplots(figsize=(10, 5))  # Create the figure and axes explicitly
     ax.imshow(maze, cmap='binary', vmin=0, vmax=1)  # Visualize the maze
-    
     # Optionally, you can add additional visualizations or styling to the axes if needed
     ax.axis('off')  # Hide the axis
-    
     # Now pass the figure to st.pyplot() to avoid the warning
     st.pyplot(fig)
 
@@ -676,7 +628,7 @@ if option != "Create Custom Maze":
 #check box
 checkbox_value = st.sidebar.checkbox("Enable visulization")
 
-
+speed =0
 if checkbox_value == True:
     #speed select
     speed_slider = st.sidebar.select_slider(
