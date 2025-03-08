@@ -6,7 +6,6 @@ import time
 from collections import deque
 import heapq
 import random
-from streamlit.components.v1 import html
 
 # Path Reconstruction
 def reconstruct_path(parent, start, end):
@@ -128,10 +127,6 @@ def image_to_maze(image_path):
 
     return binary_maze, start_point, end_point
 
-# custom maze
-import streamlit as st
-import numpy as np
-
 def custom_maze_editor():
     st.sidebar.header("Custom Maze Editor")
     
@@ -212,7 +207,6 @@ def custom_maze_editor():
 
         return st.session_state.custom_maze, st.session_state.start_point, st.session_state.end_point
     return None, None, None
-
 
 def handle_cell_click(i, j):
     """Handle cell click event to modify the maze."""
@@ -561,6 +555,9 @@ st.title("Maze Solver")
 st.sidebar.header("Maze Configuration")
 option = st.sidebar.selectbox("Choose Maze Source", ["Generate Maze", "Upload Image", "Create Custom Maze"],key="maze_source_select") 
 
+#check box
+checkbox_value = st.sidebar.checkbox("Enable visulization")
+
 if option == "Create Custom Maze":
     handle_grid_messages()
     maze, start, end = custom_maze_editor()
@@ -590,26 +587,27 @@ if option == "Create Custom Maze":
             st.error(f"Error processing maze: {str(e)}")
     else:
         st.warning("Please create a new maze first using the sidebar controls!")
-else:
-    if option == "Generate Maze":
-        cols = st.sidebar.slider("Maze Width", 5, 50, 20)
-        rows = st.sidebar.slider("Maze Height", 5, 50, 20)
-        maze = generate_maze(cols, rows)
-        start = (1, 0)
-        end = (maze.shape[0]-2, maze.shape[1]-1)
-    else:
-        uploaded = st.sidebar.file_uploader("Upload Maze Image", type=["png","jpg","jpeg"])
-        if uploaded:
-            with open("temp.png","wb") as f:
-                f.write(uploaded.getbuffer())
-            try:
-                maze, start, end = image_to_maze("temp.png")
-            except ValueError as e:
-                st.error(str(e))
-                st.stop()
-        else:
-            st.warning("Please add a maze to solve!")
+
+elif option == "Generate Maze":
+    cols = st.sidebar.slider("Maze Width", 5, 50, 20)
+    rows = st.sidebar.slider("Maze Height", 5, 50, 20)
+    maze = generate_maze(cols, rows)
+    start = (1, 0)
+    end = (maze.shape[0]-2, maze.shape[1]-1)
+
+elif option == "Upload Image":
+    uploaded = st.sidebar.file_uploader("Upload Maze Image", type=["png","jpg","jpeg"])
+    if uploaded:
+        with open("temp.png","wb") as f:
+            f.write(uploaded.getbuffer())
+        try:
+            maze, start, end = image_to_maze("temp.png")
+        except ValueError as e:
+            st.error(str(e))
             st.stop()
+    else:
+        st.warning("Please add a maze to solve!")
+        st.stop()
 
 
 # Display original maze
@@ -625,8 +623,7 @@ if option != "Create Custom Maze":
 
 
 
-#check box
-checkbox_value = st.sidebar.checkbox("Enable visulization")
+
 
 speed =0
 if checkbox_value == True:
