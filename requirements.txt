@@ -1,6 +1,6 @@
+numpy
+streamlit
+opencv-python
 matplotlib
+Pillow
 networkx
-numpy>=1.19.5
-matplotlib>=3.5.0
-streamlit>=1.12.0
-opencv-python-headless>=4.6.0.66

@@ -316,7 +316,8 @@ def dfs(maze, start, end,speed, visualize=True):
                 ax.add_patch(plt.Rectangle((vy - 0.5, vx - 0.5), 1, 1, color='blue', alpha=0.6))
             
             plot_placeholder.pyplot(fig)
-            time.sleep(speed)
+            # time.sleep(speed)
+            plt.pause(speed)
 
     duration = time.time() - start_time
     st.write(f"DFS took {duration:.4f} seconds")
@@ -636,7 +637,7 @@ if checkbox_value == True:
     speed_map = {
         "Slow": 1,    # Slow speed, more delay
         "Normal": 0.01,  # Normal speed, moderate delay
-        "Faster": 0.005  # Faster speed, less delay
+        "Faster": 0.00001  # Faster speed, less delay
     }
     speed = speed_map[speed_slider]
 
