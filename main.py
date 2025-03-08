@@ -706,7 +706,7 @@ if __name__ == "__main__":
         if choice == 1:
             if option == 2:
                 print("Choose Visualization Option:")
-                print("1. Step-by-Step Visualization")
+                print("1. Step-by-Step Visualization (Slower)")
                 print("2. Final Path Visualization")
                 visualization_choice = int(input("Enter Visualization Choice: "))
                 if visualization_choice == 1:
@@ -719,7 +719,7 @@ if __name__ == "__main__":
         elif choice == 2:
             if option == 2:
                 print("Choose Visualization Option:")
-                print("1. Step-by-Step Visualization")
+                print("1. Step-by-Step Visualization (Slower)")
                 print("2. Final Path Visualization")
                 visualization_choice = int(input("Enter Visualization Choice: "))
                 if visualization_choice == 1:
@@ -732,7 +732,7 @@ if __name__ == "__main__":
         elif choice == 3:
             if option == 2:
                 print("Choose Visualization Option:")
-                print("1. Step-by-Step Visualization")
+                print("1. Step-by-Step Visualization (Slower)")
                 print("2. Final Path Visualization")
                 visualization_choice = int(input("Enter Visualization Choice: "))
                 if visualization_choice == 1:
@@ -767,7 +767,7 @@ if __name__ == "__main__":
 
             if option == 2:
                 print("Choose Visualization Option:")
-                print("1. Step-by-Step Visualization")
+                print("1. Step-by-Step Visualization (Slower)")
                 print("2. Final Path Visualization")
                 visualization_choice = int(input("Enter Visualization Choice: "))
                 if visualization_choice == 1:
