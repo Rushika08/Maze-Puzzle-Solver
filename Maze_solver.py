@@ -686,8 +686,8 @@ if checkbox_value == True:
     )
     speed_map = {
         "Slow": 1,    # Slow speed, more delay
-        "Normal": 0.2,  # Normal speed, moderate delay
-        "Faster": 0.05  # Faster speed, less delay
+        "Normal": 0.01,  # Normal speed, moderate delay
+        "Faster": 0.005  # Faster speed, less delay
     }
     speed = speed_map[speed_slider]
 
