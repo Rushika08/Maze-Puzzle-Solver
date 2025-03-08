@@ -671,21 +671,26 @@ if option != "Create Custom Maze":
     # Now pass the figure to st.pyplot() to avoid the warning
     st.pyplot(fig)
 
-#speed select
-speed_slider = st.sidebar.select_slider(
-    "Select Speed", 
-    options=["Slow", "Normal", "Faster"],
-    value="Normal"  # Set the default value to "Normal"
-)
 
-speed_map = {
-    "Slow": 1,    # Slow speed, more delay
-    "Normal": 0.2,  # Normal speed, moderate delay
-    "Faster": 0.05  # Faster speed, less delay
-}
-speed = speed_map[speed_slider]
+
 #check box
 checkbox_value = st.sidebar.checkbox("Enable visulization")
+
+
+if checkbox_value == True:
+    #speed select
+    speed_slider = st.sidebar.select_slider(
+        "Select Speed", 
+        options=["Slow", "Normal", "Faster"],
+        value="Normal"  # Set the default value to "Normal"
+    )
+    speed_map = {
+        "Slow": 1,    # Slow speed, more delay
+        "Normal": 0.2,  # Normal speed, moderate delay
+        "Faster": 0.05  # Faster speed, less delay
+    }
+    speed = speed_map[speed_slider]
+
 # Algorithm selection
 algorithm = st.sidebar.selectbox("Algorithm", ["BFS", "DFS", "Dijkstra", "A*", "Ant Colony"],key="algorithm_select")  
 
