@@ -645,26 +645,34 @@ if checkbox_value == True:
 
 # Algorithm selection
 algorithm = st.sidebar.selectbox("Algorithm", ["BFS", "DFS", "Dijkstra", "A*", "Ant Colony"],key="algorithm_select")  
+st.session_state.algorithm = algorithm
+# Show the heuristic menu only if A* is selected
+if st.session_state.algorithm == "A*":
+    heuristic = st.sidebar.selectbox(
+        "Heuristic",
+        ["Manhattan", "Euclidean", "Chebyshev", "Diagonal", "Octile"]
+    )
+    heuristic_func = {
+        "Manhattan": manhattan_distance,
+        "Euclidean": euclidean_distance,
+        "Chebyshev": chebyshev_distance,
+        "Diagonal": diagonal_distance,
+        "Octile": octile_distance
+    }[heuristic]
 
 if st.sidebar.button("Solve Maze"):
     if checkbox_value == True:
         st.header("Solution Process")
-    if algorithm == "BFS":
-        path, visited = bfs(maze, start, end, speed,visualize=checkbox_value)
-    elif algorithm == "DFS":
-        path, visited = dfs(maze, start, end, speed,visualize=checkbox_value)
-    elif algorithm == "Dijkstra":
-        path, visited = dijkstra(maze, start, end,speed,visualize=checkbox_value)
-    elif algorithm == "A*":
-        heuristic = st.sidebar.selectbox("Heuristic",
-                                       ["Manhattan", "Euclidean", "Chebyshev"])
-        heuristic_func = {
-            "Manhattan": manhattan_distance,
-            "Euclidean": euclidean_distance,
-            "Chebyshev": chebyshev_distance
-        }[heuristic]
-        path, visited = astar(maze, start, end, heuristic_func)
-    elif algorithm == "Ant Colony":
+    # Run the selected algorithm
+    if st.session_state.algorithm == "BFS":
+        path, visited = bfs(maze, start, end, speed, visualize=checkbox_value)
+    elif st.session_state.algorithm == "DFS":
+        path, visited = dfs(maze, start, end, speed, visualize=checkbox_value)
+    elif st.session_state.algorithm == "Dijkstra":
+        path, visited = dijkstra(maze, start, end, speed, visualize=checkbox_value)
+    elif st.session_state.algorithm == "A*":
+        path, visited = astar(maze, start, end, heuristic_func, speed, visualize=checkbox_value)
+    elif st.session_state.algorithm == "Ant Colony":
         path, pheromones = ant_colony_optimization(maze, start, end)
         visited = pheromones
     
