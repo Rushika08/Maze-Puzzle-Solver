@@ -283,330 +283,232 @@ def handle_grid_messages():
         ]
         del st.session_state.messages
 
-# BFS Algorithm 
-def bfs(maze, start, end, speed,visualize=True):
+# Modified visualize_maze function
+def visualize_maze(maze, path=None, visited=None, pheromones=None, step=None):
+    fig, ax = plt.subplots(figsize=(10, 5))
+    ax.imshow(maze, cmap='binary', vmin=0, vmax=1)
+    
+    if visited is not None:
+        exploration = np.ma.masked_where(visited == 0, visited)
+        ax.imshow(exploration, cmap='Blues', alpha=0.3, interpolation='nearest')
+    
+    if pheromones is not None:
+        if np.max(pheromones) > 0:
+            norm_pheromones = pheromones / np.max(pheromones)
+        else:
+            norm_pheromones = pheromones
+        ax.imshow(norm_pheromones, alpha=0.5, cmap='hot', interpolation='nearest')
+    
+    if path:
+        path_x, path_y = zip(*path)
+        ax.plot(path_y, path_x, c='red', linewidth=2)
+    
+    if step is not None:
+        ax.set_title(f"Step: {step}")
+    
+    ax.axis('off')
+     # Display in Streamlit
+    st.pyplot(fig)
+    # Close figure to free memory
+    plt.close(fig)
+    return fig
+
+
+# Modified BFS
+def bfs(maze, start, end):
     start_time = time.time()
     queue = deque([start])
     visited = np.zeros_like(maze)
     parent = {}
     visited[start] = 1
     directions = [(0, 1), (1, 0), (0, -1), (-1, 0)]
-
-    # Create a placeholder for dynamic updates
-    plot_placeholder = st.empty()
+    frames = []
 
     while queue:
         x, y = queue.popleft()
+        frames.append(visited.copy())
         
-        if visualize:
-        
-            fig, ax = plt.subplots(figsize=(10, 5))
-            ax.imshow(maze, cmap='binary')
-            ax.axis('off')
-           
-            # Draw visited nodes
-            for (vx, vy) in parent.keys():
-                ax.add_patch(plt.Rectangle((vy - 0.5, vx - 0.5), 1, 1, color='blue', alpha=0.6))
-
-            # Update the plot
-            plot_placeholder.pyplot(fig)
-            plt.close(fig)  # Close the figure to prevent memory leaks
-            adjusted_sleep_time = max(0.01, speed)  # Ensure the sleep time is not zero
-            time.sleep(adjusted_sleep_time)
-
         if (x, y) == end:
             break
-
+            
         for dx, dy in directions:
             nx, ny = x + dx, y + dy
             if 0 <= nx < maze.shape[0] and 0 <= ny < maze.shape[1] and maze[nx, ny] == 0 and not visited[nx, ny]:
-                queue.append((nx, ny))
                 visited[nx, ny] = 1
                 parent[(nx, ny)] = (x, y)
-
+                queue.append((nx, ny))
+                
     duration = time.time() - start_time
     st.write(f"BFS took {duration:.4f} seconds")
-    return reconstruct_path(parent, start, end), visited
+    return reconstruct_path(parent, start, end), visited, frames
 
-# DFS Algorithm 
-def dfs(maze, start, end,speed, visualize=True):
+# Modified DFS
+def dfs(maze, start, end):
     start_time = time.time()
     stack = [start]
     visited = np.zeros_like(maze)
     parent = {}
     visited[start] = 1
     directions = [(0, 1), (1, 0), (0, -1), (-1, 0)]
-
-    # Create visualization elements
-    plot_placeholder = st.empty()
-    fig, ax = plt.subplots(figsize=(10, 5))
-    ax.imshow(maze, cmap='binary')
-    ax.set_title("DFS Step-by-Step Visualization")
-    ax.axis('off')
-
+    frames = []
+    
     while stack:
         x, y = stack.pop()
-
+        frames.append(visited.copy())
+        
         if (x, y) == end:
             break
-        
-        if visualize:
-            # Explore neighbors in random order
-            random.shuffle(directions)
-            for dx, dy in directions:
-                nx, ny = x + dx, y + dy
-
-                if 0 <= nx < maze.shape[0] and 0 <= ny < maze.shape[1] and maze[nx, ny] == 0 and not visited[nx, ny]:
-                    stack.append((nx, ny))
-                    visited[nx, ny] = 1
-                    parent[(nx, ny)] = (x, y)
-
-                    # Update visualization
-                    ax.clear()
-                    ax.imshow(maze, cmap='binary')
-                    ax.axis('off')
-                    
-                    # Draw visited nodes
-                    for (vx, vy) in parent.keys():
-                        ax.add_patch(plt.Rectangle((vy - 0.5, vx - 0.5), 1, 1, color='blue', alpha=0.6))
-                    
-                    plot_placeholder.pyplot(fig)
-                    time.sleep(speed)
-
+            
+        random.shuffle(directions)
+        for dx, dy in directions:
+            nx, ny = x + dx, y + dy
+            if 0 <= nx < maze.shape[0] and 0 <= ny < maze.shape[1] and maze[nx, ny] == 0 and not visited[nx, ny]:
+                visited[nx, ny] = 1
+                parent[(nx, ny)] = (x, y)
+                stack.append((nx, ny))
+                
     duration = time.time() - start_time
     st.write(f"DFS took {duration:.4f} seconds")
-    return reconstruct_path(parent, start, end), visited
+    return reconstruct_path(parent, start, end), visited, frames
 
-# Dijkstra's Algorithm 
-def dijkstra(maze, start, end,speed, visualize=True):
+# Modified Dijkstra's
+def dijkstra(maze, start, end):
     start_time = time.time()
     queue = [(0, start)]
     distances = {start: 0}
     parent = {}
     visited = np.zeros_like(maze)
     directions = [(0, 1), (1, 0), (0, -1), (-1, 0)]
-
-    # Create visualization elements
-    plot_placeholder = st.empty()
-    fig, ax = plt.subplots(figsize=(10, 5))
-    ax.imshow(maze, cmap='binary')
-    ax.set_title("Dijkstra's Step-by-Step Visualization")
-    ax.axis('off')
-
+    frames = []
+    
     while queue:
         dist, (x, y) = heapq.heappop(queue)
+        frames.append(visited.copy())
+        
         if visited[x, y]:
             continue
+            
         visited[x, y] = 1
-
+        
         if (x, y) == end:
             break
-        
-        if visualize:
-            # Update visualization
-            ax.clear()
-            ax.imshow(maze, cmap='binary')
-            ax.axis('off')
             
-            # Draw visited nodes
-            for (vx, vy) in parent.keys():
-                ax.add_patch(plt.Rectangle((vy - 0.5, vx - 0.5), 1, 1, color='blue', alpha=0.6))
-            
-            plot_placeholder.pyplot(fig)
-            time.sleep(0.05)
-
-            for dx, dy in directions:
-                nx, ny = x + dx, y + dy
-                if 0 <= nx < maze.shape[0] and 0 <= ny < maze.shape[1] and maze[nx, ny] == 0:
-                    new_distance = dist + 1
-                    if (nx, ny) not in distances or new_distance < distances[(nx, ny)]:
-                        distances[(nx, ny)] = new_distance
-                        heapq.heappush(queue, (new_distance, (nx, ny)))
-                        parent[(nx, ny)] = (x, y)
-
+        for dx, dy in directions:
+            nx, ny = x + dx, y + dy
+            if 0 <= nx < maze.shape[0] and 0 <= ny < maze.shape[1] and maze[nx, ny] == 0:
+                new_distance = dist + 1
+                if (nx, ny) not in distances or new_distance < distances[(nx, ny)]:
+                    distances[(nx, ny)] = new_distance
+                    heapq.heappush(queue, (new_distance, (nx, ny)))
+                    parent[(nx, ny)] = (x, y)
+                    
     duration = time.time() - start_time
     st.write(f"Dijkstra took {duration:.4f} seconds")
-    return reconstruct_path(parent, start, end), visited
+    return reconstruct_path(parent, start, end), visited, frames
 
-# Heuristic functions
-def manhattan_distance(a, b):
-    return abs(a[0] - b[0]) + abs(a[1] - b[1])
-
-def euclidean_distance(a, b):
-    return ((a[0] - b[0]) ** 2 + (a[1] - b[1]) ** 2) ** 0.5
-
-def chebyshev_distance(a, b):
-    return max(abs(a[0] - b[0]), abs(a[1] - b[1]))
-
-def diagonal_distance(a, b):
-    dx = abs(a[0] - b[0])
-    dy = abs(a[1] - b[1])
-    D = 1  # Cost of horizontal/vertical movement
-    D2 = 1.414  # Cost of diagonal movement (sqrt(2))
-    return D * (dx + dy) + (D2 - 2 * D) * min(dx, dy)
-
-def octile_distance(a, b):
-    dx = abs(a[0] - b[0])
-    dy = abs(a[1] - b[1])
-    D = 1  # Cost of horizontal/vertical movement
-    D2 = 1.414  # Cost of diagonal movement (sqrt(2))
-    return D * (dx + dy) + (D2 - 2 * D) * min(dx, dy)
-
-# A* Algorithm 
-def astar(maze, start, end, heuristic_func,speed, visualize=True):
+# Modified A*
+def astar(maze, start, end, heuristic_func):
     start_time = time.time()
     queue = [(0, start)]
     g_values = {start: 0}
     parent = {}
     visited = np.zeros_like(maze)
     directions = [(0, 1), (1, 0), (0, -1), (-1, 0)]
-
-    # Create visualization elements
-    plot_placeholder = st.empty()
-    fig, ax = plt.subplots(figsize=(10, 5))
-    ax.imshow(maze, cmap='binary')
-    ax.set_title("A* Step-by-Step Visualization")
-    ax.axis('off')
-
+    frames = []
+    
     while queue:
         _, (x, y) = heapq.heappop(queue)
-
-        if visited[x, y]:
-            continue
-        visited[x, y] = 1
-
+        frames.append(visited.copy())
+        
         if (x, y) == end:
             break
+            
+        if visited[x, y]:
+            continue
+            
+        visited[x, y] = 1
         
-        if visualize:
-            # Update visualization
-            ax.clear()
-            ax.imshow(maze, cmap='binary')
-            ax.axis('off')
-            
-            # Draw visited nodes
-            for (vx, vy) in parent.keys():
-                ax.add_patch(plt.Rectangle((vy - 0.5, vx - 0.5), 1, 1, color='blue', alpha=0.6))
-            
-            plot_placeholder.pyplot(fig)
-            time.sleep(0.05)
-
-            for dx, dy in directions:
-                nx, ny = x + dx, y + dy
-                if 0 <= nx < maze.shape[0] and 0 <= ny < maze.shape[1] and maze[nx, ny] == 0:
-                    new_g = g_values.get((x, y), 0) + 1
-                    if new_g < g_values.get((nx, ny), float('inf')):
-                        g_values[(nx, ny)] = new_g
-                        f_value = new_g + heuristic_func((nx, ny), end)
-                        heapq.heappush(queue, (f_value, (nx, ny)))
-                        parent[(nx, ny)] = (x, y)
-
+        for dx, dy in directions:
+            nx, ny = x + dx, y + dy
+            if 0 <= nx < maze.shape[0] and 0 <= ny < maze.shape[1] and maze[nx, ny] == 0:
+                new_g = g_values.get((x, y), 0) + 1
+                if new_g < g_values.get((nx, ny), float('inf')):
+                    g_values[(nx, ny)] = new_g
+                    f_value = new_g + heuristic_func((nx, ny), end)
+                    heapq.heappush(queue, (f_value, (nx, ny)))
+                    parent[(nx, ny)] = (x, y)
+                    
     duration = time.time() - start_time
     st.write(f"A* took {duration:.4f} seconds")
-    return reconstruct_path(parent, start, end), visited
+    return reconstruct_path(parent, start, end), visited, frames
 
-#antcolony 
-def ant_colony_optimization(maze, start, end, speed , num_ants=10, max_iter=100, evaporation_rate=0.5, alpha=1, beta=2):
+# Modified Ant Colony
+def ant_colony_optimization(maze, start, end, num_ants=10, max_iter=100, evaporation_rate=0.5, alpha=1, beta=2):
     start_time = time.time()
     directions = [(0, 1), (1, 0), (0, -1), (-1, 0)]
     pheromones = np.ones_like(maze, dtype=float)
-    
-    if visualize:
-        # Create visualization elements
-        plot_placeholder = st.empty()
-        fig, ax = plt.subplots(figsize=(10, 5))
-        ax.imshow(maze, cmap='binary')
-        ax.set_title("Ant Colony Optimization")
-        ax.axis('off')
+    frames = []
 
-        best_path = None
-        best_path_length = float('inf')
+    best_path = None
+    best_path_length = float('inf')
 
-        for iteration in range(max_iter):
-            paths = []
-            path_lengths = []
+    for iteration in range(max_iter):
+        paths = []
+        path_lengths = []
 
-            for ant in range(num_ants):
-                current = start
-                path = [current]
-                visited = set([current])
+        for ant in range(num_ants):
+            current = start
+            path = [current]
+            visited = set([current])
 
-                while current != end:
-                    x, y = current
-                    neighbors = []
+            while current != end:
+                x, y = current
+                neighbors = []
 
-                    for dx, dy in directions:
-                        nx, ny = x + dx, y + dy
-                        if 0 <= nx < maze.shape[0] and 0 <= ny < maze.shape[1] and maze[nx, ny] == 0 and (nx, ny) not in visited:
-                            neighbors.append((nx, ny))
+                for dx, dy in directions:
+                    nx, ny = x + dx, y + dy
+                    if 0 <= nx < maze.shape[0] and 0 <= ny < maze.shape[1] and maze[nx, ny] == 0 and (nx, ny) not in visited:
+                        neighbors.append((nx, ny))
 
-                    if not neighbors:
-                        break
+                if not neighbors:
+                    break
 
-                    probabilities = []
-                    for neighbor in neighbors:
-                        pheromone = pheromones[neighbor]
-                        distance = abs(neighbor[0] - end[0]) + abs(neighbor[1] - end[1])
-                        probabilities.append((pheromone ** alpha) * ((1 / (distance + 1)) ** beta))
+                probabilities = []
+                for neighbor in neighbors:
+                    pheromone = pheromones[neighbor]
+                    distance = abs(neighbor[0] - end[0]) + abs(neighbor[1] - end[1])
+                    probabilities.append((pheromone ** alpha) * ((1 / (distance + 1)) ** beta))
 
-                    probabilities = np.array(probabilities)
-                    probabilities /= probabilities.sum()
+                probabilities = np.array(probabilities)
+                probabilities /= probabilities.sum()
 
-                    next_node = neighbors[np.random.choice(len(neighbors), p=probabilities)]
-                    path.append(next_node)
-                    visited.add(next_node)
-                    current = next_node
+                next_node = neighbors[np.random.choice(len(neighbors), p=probabilities)]
+                path.append(next_node)
+                visited.add(next_node)
+                current = next_node
 
-                if current == end:
-                    paths.append(path)
-                    path_lengths.append(len(path))
+            if current == end:
+                paths.append(path)
+                path_lengths.append(len(path))
 
-                    if len(path) < best_path_length:
-                        best_path = path
-                        best_path_length = len(path)
+                if len(path) < best_path_length:
+                    best_path = path
+                    best_path_length = len(path)
 
-            pheromones *= evaporation_rate
-            for path, length in zip(paths, path_lengths):
-                for node in path:
-                    pheromones[node] += 1 / length
+        pheromones *= evaporation_rate
+        for path, length in zip(paths, path_lengths):
+            for node in path:
+                pheromones[node] += 1 / length
 
-        # Update visualization
-        ax.clear()
-        ax.imshow(maze, cmap='binary')
-        ax.imshow(pheromones, alpha=0.5, cmap='hot')
-        ax.set_title(f"Ant Colony Optimization (Iteration {iteration+1})")
-        ax.axis('off')
-        plot_placeholder.pyplot(fig)
-        time.sleep(0.1)
+        frames.append(pheromones.copy())
 
     duration = time.time() - start_time
     st.write(f"Ant Colony Optimization took {duration:.4f} seconds")
-    return best_path, pheromones   
+    return best_path, pheromones, frames
 
-# Modified visualize_maze to return figure
-def visualize_maze(maze, path=None, visited=None):
-    plt.figure(figsize=(10, 5))
-    plt.imshow(maze, cmap='binary')
-
-    if visited is not None:
-        for (x, y) in zip(*np.where(visited == 1)):
-            # Fill the cell with color
-            plt.fill([y - 0.5, y + 0.5, y + 0.5, y - 0.5],
-                     [x - 0.5, x - 0.5, x + 0.5, x + 0.5], color='blue', alpha=0.5)
-
-    if path:
-        for (x, y) in path:
-            # Fill the cell with color for the path
-            plt.fill([y - 0.5, y + 0.5, y + 0.5, y - 0.5],
-                     [x - 0.5, x - 0.5, x + 0.5, x + 0.5], color='red', alpha=0.8)
-
-    plt.axis('off')
-    plt.show()
-
-
-
-# Streamlit UI
+#Streamlit UI
 st.title("Maze Solver")
+
 # Maze generation/upload
 st.sidebar.header("Maze Configuration")
 option = st.sidebar.selectbox("Choose Maze Source", ["Generate Maze", "Upload Image", "Create Custom Maze"],key="maze_source_select") 
@@ -657,57 +559,54 @@ else:
             st.warning("Please add a maze to solve!")
             st.stop()
 
-
 # Display original maze
 if option != "Create Custom Maze":
     st.header("Original Maze")
-    
-    # Explicitly create the figure using plt.subplots
-    fig, ax = plt.subplots(figsize=(10, 5))  # Create the figure and axes explicitly
-    ax.imshow(maze, cmap='binary', vmin=0, vmax=1)  # Visualize the maze
-    
-    # Optionally, you can add additional visualizations or styling to the axes if needed
-    ax.axis('off')  # Hide the axis
-    
-    # Now pass the figure to st.pyplot() to avoid the warning
+    fig = visualize_maze(maze)
     st.pyplot(fig)
 
-#speed select
-speed = st.sidebar.slider("Visualization Speed (seconds per step)", 0.00, 0.20, 0.05)
-#check box
-checkbox_value = st.sidebar.checkbox("Enable visulization")
+# Add speed control slider
+speed = st.sidebar.slider("Visualization Speed", 0.01, 0.1, 0.05)
+
 # Algorithm selection
-algorithm = st.sidebar.selectbox("Algorithm", ["BFS", "DFS", "Dijkstra", "A*", "Ant Colony"],key="algorithm_select")  
+algorithm = st.sidebar.selectbox("Algorithm", ["BFS", "DFS", "Dijkstra", "A*", "Ant Colony"])
 
 if st.sidebar.button("Solve Maze"):
-    if checkbox_value == True:
-        st.header("Solution Process")
+    st.header("Solving Process")
+    process_placeholder = st.empty()
+    
     if algorithm == "BFS":
-        path, visited = bfs(maze, start, end, speed,visualize=checkbox_value)
+        path, visited, frames = bfs(maze, start, end)
     elif algorithm == "DFS":
-        path, visited = dfs(maze, start, end, speed,visualize=checkbox_value)
+        path, visited, frames = dfs(maze, start, end)
     elif algorithm == "Dijkstra":
-        path, visited = dijkstra(maze, start, end,visualize=checkbox_value)
+        path, visited, frames = dijkstra(maze, start, end)
     elif algorithm == "A*":
-        heuristic = st.sidebar.selectbox("Heuristic",
-                                       ["Manhattan", "Euclidean", "Chebyshev"])
+        heuristic = st.sidebar.selectbox("Heuristic", ["Manhattan", "Euclidean", "Chebyshev"])
         heuristic_func = {
             "Manhattan": manhattan_distance,
             "Euclidean": euclidean_distance,
             "Chebyshev": chebyshev_distance
         }[heuristic]
-        path, visited = astar(maze, start, end, heuristic_func)
+        path, visited, frames = astar(maze, start, end, heuristic_func)
     elif algorithm == "Ant Colony":
-        path, pheromones = ant_colony_optimization(maze, start, end)
-        visited = pheromones
+        path, pheromones, frames = ant_colony_optimization(maze, start, end)
     
+    # Show exploration process
+    for step, frame in enumerate(frames):
+        if algorithm == "Ant Colony":
+            fig = visualize_maze(maze, pheromones=frame, step=step)
+        else:
+            fig = visualize_maze(maze, visited=frame, step=step)
+        process_placeholder.pyplot(fig)
+        time.sleep(speed)  # Use the speed value from slider
+    
+    # Show final solution
     st.header("Final Solution")
-    fig, ax = plt.subplots(figsize=(10, 5))
-    ax.imshow(maze, cmap='binary')
-    if path:
-        path_x, path_y = zip(*path)
-        ax.plot(path_y, path_x, c='red', linewidth=2)
-    ax.axis('off')
+    if algorithm == "Ant Colony":
+        fig = visualize_maze(maze, path, pheromones=pheromones)
+    else:
+        fig = visualize_maze(maze, path, visited)
     st.pyplot(fig)
     
     if path and (end in path):
