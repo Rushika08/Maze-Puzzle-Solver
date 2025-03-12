@@ -27,6 +27,7 @@ def generate_maze(width, height):
     stack = [(start_x, start_y)]
     directions = [(0, 1), (1, 0), (0, -1), (-1, 0)]
 
+    # Phase 1: Create main path using recursive backtracking
     while stack:
         x, y = stack[-1]
         random.shuffle(directions)
@@ -34,7 +35,6 @@ def generate_maze(width, height):
 
         for dx, dy in directions:
             nx, ny = x + dx, y + dy
-
             if 0 <= nx < width and 0 <= ny < height and maze[ny * 2 + 1, nx * 2 + 1] == 1:
                 maze[y * 2 + 1 + dy, x * 2 + 1 + dx] = 0
                 maze[ny * 2 + 1, nx * 2 + 1] = 0
@@ -45,10 +45,42 @@ def generate_maze(width, height):
         if not found:
             stack.pop()
 
-    # Entrance and Exit
+    # Phase 2: Create alternative paths by strategically removing walls
+    for _ in range(width * height // 4):  # Adjust number of loops
+        x = random.randint(1, width * 2 - 1)
+        y = random.randint(1, height * 2 - 1)
+        
+        # Only modify walls (1s) that can create new connections
+        if maze[y, x] == 1:
+            # Check horizontal wall
+            if x % 2 == 0 and y % 2 == 1:
+                if maze[y, x-1] == 0 and maze[y, x+1] == 0:
+                    maze[y, x] = 0
+            # Check vertical wall
+            elif x % 2 == 1 and y % 2 == 0:
+                if maze[y-1, x] == 0 and maze[y+1, x] == 0:
+                    maze[y, x] = 0
+
+    # Phase 3: Ensure connectivity between main path and alternative paths
+    # Create explicit secondary path to exit
+    exit_y, exit_x = height * 2 - 1, width * 2 - 1
+    current_y, current_x = exit_y - 1, exit_x
+    while current_y > 1 or current_x > 1:
+        if current_y > 1 and maze[current_y - 1, current_x] == 0:
+            current_y -= 1
+        elif current_x > 1 and maze[current_y, current_x - 1] == 0:
+            current_x -= 1
+        else:
+            maze[current_y, current_x] = 0
+            if random.random() < 0.5 and current_y > 1:
+                current_y -= 1
+            else:
+                current_x -= 1
+
+    # Set entrance and exit
     maze[1, 0] = 0
     maze[-2, -1] = 0
-
+    
     return maze
 
 # Image to Maze Conversion
@@ -451,7 +483,7 @@ def astar(maze, start, end, heuristic_func,speed, visualize=True):
     return reconstruct_path(parent, start, end), visited
 
 #antcolony 
-def ant_colony_optimization(maze, start, end, num_ants=10, max_iter=100, evaporation_rate=0.5, alpha=1, beta=2):
+def ant_colony_optimization(maze, start, end,speed, num_ants=50, max_iter=100, evaporation_rate=0.5, alpha=1, beta=2,visualize=True):
     start_time = time.time()
     directions = [(0, 1), (1, 0), (0, -1), (-1, 0)]
     pheromones = np.ones_like(maze, dtype=float)
@@ -462,7 +494,7 @@ def ant_colony_optimization(maze, start, end, num_ants=10, max_iter=100, evapora
     ax.imshow(maze, cmap='binary')
     ax.set_title("Ant Colony Optimization")
     ax.axis('off')
-
+    progress_bar = st.progress(0)
     best_path = None
     best_path_length = float('inf')
 
@@ -513,16 +545,19 @@ def ant_colony_optimization(maze, start, end, num_ants=10, max_iter=100, evapora
         for path, length in zip(paths, path_lengths):
             for node in path:
                 pheromones[node] += 1 / length
-
-        # Update visualization
-        ax.clear()
-        ax.imshow(maze, cmap='binary')
-        ax.imshow(pheromones, alpha=0.5, cmap='hot')
-        ax.set_title(f"Ant Colony Optimization (Iteration {iteration+1})")
-        ax.axis('off')
-        plot_placeholder.pyplot(fig)
-        time.sleep(0.1)
-
+        current_progress = int((iteration+1)/max_iter*100)
+         
+        if visualize:
+            # Update visualization
+            ax.clear()
+            ax.imshow(maze, cmap='binary')
+            ax.imshow(pheromones, alpha=0.5, cmap='hot')
+            ax.axis('off')
+            plot_placeholder.pyplot(fig)
+            time.sleep(speed)
+        
+        progress_bar.progress(current_progress)
+            
     duration = time.time() - start_time
     st.write(f"Ant Colony Optimization took {duration:.4f} seconds")
     return best_path, pheromones   
@@ -660,20 +695,27 @@ if st.session_state.algorithm == "A*":
     }[heuristic]
 
 if st.sidebar.button("Solve Maze"):
-    if checkbox_value == True:
-        st.header("Solution Process")
-    # Run the selected algorithm
-    if st.session_state.algorithm == "BFS":
-        path, visited = bfs(maze, start, end, speed, visualize=checkbox_value)
-    elif st.session_state.algorithm == "DFS":
-        path, visited = dfs(maze, start, end, speed, visualize=checkbox_value)
-    elif st.session_state.algorithm == "Dijkstra":
-        path, visited = dijkstra(maze, start, end, speed, visualize=checkbox_value)
-    elif st.session_state.algorithm == "A*":
-        path, visited = astar(maze, start, end, heuristic_func, speed, visualize=checkbox_value)
-    elif st.session_state.algorithm == "Ant Colony":
-        path, pheromones = ant_colony_optimization(maze, start, end)
-        visited = pheromones
+    try:
+        if checkbox_value == True:
+            st.header("Solution Process")
+        # Run the selected algorithm
+        if st.session_state.algorithm == "BFS":
+            path, visited = bfs(maze, start, end, speed, visualize=checkbox_value)
+        elif st.session_state.algorithm == "DFS":
+            path, visited = dfs(maze, start, end, speed, visualize=checkbox_value)
+        elif st.session_state.algorithm == "Dijkstra":
+            path, visited = dijkstra(maze, start, end, speed, visualize=checkbox_value)
+        elif st.session_state.algorithm == "A*":
+            path, visited = astar(maze, start, end, heuristic_func, speed, visualize=checkbox_value)
+        elif st.session_state.algorithm == "Ant Colony":
+            if start is None or end is None:
+                st.error("Please set both start and end points!")
+                st.stop()
+            path, pheromones = ant_colony_optimization(maze, start, end,speed,visualize=checkbox_value)
+            visited = pheromones
+    except TypeError:
+        st.error("Please create or generate new maze")
+        st.stop()
     
     st.header("Final Solution")
     fig, ax = plt.subplots(figsize=(10, 5))
