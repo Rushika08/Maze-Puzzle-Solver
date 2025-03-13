@@ -656,11 +656,10 @@ if option != "Create Custom Maze":
     # Now pass the figure to st.pyplot() to avoid the warning
     st.pyplot(fig)
 
-
-
-
-
 speed =0
+antCount = 20
+iteration = 100
+
 if checkbox_value == True:
     #speed select
     speed_slider = st.sidebar.select_slider(
@@ -691,6 +690,10 @@ if st.session_state.algorithm == "A*":
         "Diagonal": diagonal_distance,
         "Octile": octile_distance
     }[heuristic]
+
+if st.session_state.algorithm =="Ant Colony":
+    antCount = st.sidebar.slider("Ant Count", 5, 50, 20)
+    iteration = st.sidebar.slider("Iteration Count", 50, 1000, 100)
 
 if st.sidebar.button("Solve Maze"):
     try:

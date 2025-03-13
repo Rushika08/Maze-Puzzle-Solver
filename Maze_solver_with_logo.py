@@ -658,11 +658,10 @@ if option != "Create Custom Maze":
     # Now pass the figure to st.pyplot() to avoid the warning
     st.pyplot(fig)
 
-
-
-
-
 speed =0
+antCount = 20
+iteration = 100
+
 if checkbox_value == True:
     #speed select
     speed_slider = st.sidebar.select_slider(
@@ -694,6 +693,11 @@ if st.session_state.algorithm == "A*":
         "Octile": octile_distance
     }[heuristic]
 
+if st.session_state.algorithm =="Ant Colony":
+    antCount = st.sidebar.slider("Ant Count", 5, 50, 20)
+    iteration = st.sidebar.slider("Iteration Count", 50, 1000, 100)
+
+
 if st.sidebar.button("Solve Maze"):
     try:
         if checkbox_value == True:
@@ -711,7 +715,7 @@ if st.sidebar.button("Solve Maze"):
             if start is None or end is None:
                 st.error("Please set both start and end points!")
                 st.stop()
-            path, pheromones = ant_colony_optimization(maze, start, end,speed,visualize=checkbox_value)
+            path, pheromones = ant_colony_optimization(maze, start,end,speed, antCount,iteration,visualize=checkbox_value)
             visited = pheromones
     except TypeError:
         st.error("Please create or generate new maze")
