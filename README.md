@@ -58,6 +58,6 @@ A visualization tool for maze generation and pathfinding algorithms, built with 
 
 1. Clone repository:
 ```bash
-git clone https://github.com/yourusername/maze-solver.git
+git clone https://github.com/Rushika08/Maze-Puzzle-Solver.git
 cd maze-solver
 streamlit run Maze_solver.py
