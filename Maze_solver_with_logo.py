@@ -27,7 +27,6 @@ def generate_maze(width, height):
     stack = [(start_x, start_y)]
     directions = [(0, 1), (1, 0), (0, -1), (-1, 0)]
 
-    # Phase 1: Create main path using recursive backtracking
     while stack:
         x, y = stack[-1]
         random.shuffle(directions)
@@ -44,38 +43,6 @@ def generate_maze(width, height):
 
         if not found:
             stack.pop()
-
-    # Phase 2: Create alternative paths by strategically removing walls
-    for _ in range(width * height // 4):  # Adjust number of loops
-        x = random.randint(1, width * 2 - 1)
-        y = random.randint(1, height * 2 - 1)
-        
-        # Only modify walls (1s) that can create new connections
-        if maze[y, x] == 1:
-            # Check horizontal wall
-            if x % 2 == 0 and y % 2 == 1:
-                if maze[y, x-1] == 0 and maze[y, x+1] == 0:
-                    maze[y, x] = 0
-            # Check vertical wall
-            elif x % 2 == 1 and y % 2 == 0:
-                if maze[y-1, x] == 0 and maze[y+1, x] == 0:
-                    maze[y, x] = 0
-
-    # Phase 3: Ensure connectivity between main path and alternative paths
-    # Create explicit secondary path to exit
-    exit_y, exit_x = height * 2 - 1, width * 2 - 1
-    current_y, current_x = exit_y - 1, exit_x
-    while current_y > 1 or current_x > 1:
-        if current_y > 1 and maze[current_y - 1, current_x] == 0:
-            current_y -= 1
-        elif current_x > 1 and maze[current_y, current_x - 1] == 0:
-            current_x -= 1
-        else:
-            maze[current_y, current_x] = 0
-            if random.random() < 0.5 and current_y > 1:
-                current_y -= 1
-            else:
-                current_x -= 1
 
     # Set entrance and exit
     maze[1, 0] = 0
